@@ -130,6 +130,7 @@ export default function myCarousel({el,num,showNum,width,transitionInterval,ease
   function auto(){
     clearInterval(timer);//每次设置定时器先清除;
     timer=setInterval(function(){
+      console.log("timer is set")
       if(i==num){
         i=0;
         ul.style.transition="none";//取消transition属性
@@ -156,6 +157,7 @@ export default function myCarousel({el,num,showNum,width,transitionInterval,ease
     ul.onmouseleave=(e)=>{
       auto();
     }
-  }  
+  }
+  return timer;//返回定时器，方便外界清除  
 }
 

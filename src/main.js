@@ -12,10 +12,9 @@ Vue.prototype.axios=axios//注册axios
 import './myCss/base.css'//引入基础样式
 import './myCss/dropMenu.css'//引入下拉菜单样式表
 import myCarousel from './js/myCarousel.js'
-import bus from './js/bus.js'//引入充当bus的js文件
 
 Vue.prototype.myCarousel=myCarousel;//将自己的js组件注册到全局，通过this.myCarousel({参数})调用
-Vue.prototype.bus=bus
+Vue.prototype.bus=new Vue()//全局的bus this.bus调用
 
 Vue.filter("countConvert",function(val){//过滤器
   return val>0?"有货":"无货";

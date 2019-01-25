@@ -14,25 +14,25 @@
       </nav>
       <div class="goods_intro container font_14 clearfix">
         <div class="left fl">
-          <ul class="mImg">
-            <li v-for="(pic,i) of pics" :key="i" :class="i==index?'active':''">
-              <a href=""><img :src="pic.md" alt=""></a>
+          <ul class="mImg" v-cloak>
+            <li>
+              <a href=""><img :src="mPic" alt=""></a>
             </li>
           </ul>
-          <div class="mask"></div><!-- 小方块 -->
-          <div class="super-mask"></div><!--宽高与md图片一样大的div，遮障层-->
-          <div class="bigDiv"></div>
           <div class="sImg clearfix">
             <span class="arrow-left btn btn-lt fl"></span>
             <div class="fixed_box fl">
               <ul class="img fl">
                 <li v-for="(pic,i) of pics" :key="i" >
-                  <img :class="i==index?'active':''" :src="pic.sm" alt="" @mouseover="changeStyle" :data-id="i">
+                  <img :class="i==index?'active':''" :src="pic.sm" alt="" @mouseover="changeStyle" :data-id="i" :data-md="pic.md" :data-lg="pic.lg">
                 </li>
               </ul> 
             </div>
             <span class="arrow-right btn btn-rt fl"></span>
           </div>
+          <div class="mask" v-show="isMouseEnter" :style="`left:${maskLeft};top:${maskTop}`"></div><!-- 小方块 -->
+          <div class="super-mask" @mousemove="handleMove" @mouseenter="handleEnter" @mouseleave="handleLeave"></div><!--宽高与md图片一样大的div，遮障层-->
+          <div class="bigDiv" v-show="isMouseEnter" :style="`background-image:url(${bigImageUrl});background-position:${bigImagePosition};`"></div>
           <div class="share-atten clearfix" >
             <div class="share fl">
               <span>分享到：</span>
@@ -247,7 +247,13 @@ export default {
       relBrand:[{name:"大润窑",href:"/"}],
       fBuy:[{id:1,title:"大润窑12头青花茶具",img_url:"http://127.0.0.1:80/images/index_4L2.jpg",price:75.00,productId:1},{id:2,title:"大润窑10头汝窑茶具",img_url:"http://127.0.0.1:80/images/index_4L8.jpg",price:85.00,productId:1},{id:3,title:"大润窑7头青花茶具",img_url:"http://127.0.0.1:80/images/details/1472007824999.jpg",price:20.00,productId:1},{id:4,title:"【2018】艾仕达多功能养身壶ZCW-YS01 1.8升",img_url:"http://127.0.0.1:80/images/details/1507882204910.jpg",price:85.00,productId:1}],
       hotOrder:[{id:1,title:"OLYMPIA 拉杆箱 PET-1000 29寸",img_url:"http://127.0.0.1:80/images/details/1459567770331.jpg",price:1978.00,productId:4},{id:2,title:"膳魔师不锈钢保温茶杯带茶隔JMZ-480(浅银红)",img_url:"http://127.0.0.1:80/images/details/1488959982805.jpg",price:336.00,productId:4},{id:3,title:"伯尔尼斯BERNESE尚爵汤蒸锅BENS-170",img_url:"http://127.0.0.1:80/images/details/1489210848541.jpg",price:138.00,productId:4},{id:4,title:"乐扣乐扣麦饭石炒锅(1个)",img_url:"http://127.0.0.1:80/images/details/1514959945971.jpg",price:299.00,productId:4},{id:5,title:"乐扣乐扣收纳箱",img_url:"http://127.0.0.1:80/images/details/1490163137427.jpg",price:79.00,productId:4},{id:6,title:"膳魔师儿童吸管杯FEC-280(蓝色)",img_url:"http://127.0.0.1:80/images/details/1488960209406.jpg",price:328.00,productId:4}],
-      isFixed:false
+      isFixed:false,
+      mPic:"",
+      bigImageUrl:"",
+      isMouseEnter:false,
+      maskLeft:0,
+      maskTop:0,
+      bigImagePosition:"0px 0px"
     }
     
   },
@@ -258,6 +264,10 @@ export default {
         this.difference=res.data.difference;
         this.specs=res.data.specs;
         this.pics=res.data.pics;
+        this.bigImageUrl=this.pics[0].lg;
+        this.mPic=this.pics[0].md;
+        var num=this.pics.length;
+        this.myCarousel({el:".sImg",num:num,showNum:5,width:62,isAuto:false,isCircle:false});
         var productSpecs=this.product.specs.split(",");//当前商品规格参数转为数组
         for(var i=0;i<productSpecs.length;i++){
           this.selectArr[i]=productSpecs[i];//每种规格名的参数设为当前商品的参数
@@ -267,6 +277,32 @@ export default {
         })
         this.checkItem();
       })
+    },
+    handleEnter(e){
+      this.isMouseEnter=true;
+    },
+    handleLeave(){
+      this.isMouseEnter=false;
+    },
+    handleMove(e){
+      var maskSize=150;
+      var left=e.offsetX-maskSize/2;
+      var top=e.offsetY-maskSize/2;
+      if(left<=0){
+        left=0;
+      }
+      if(left>=e.target.offsetWidth-maskSize){
+        left=e.target.offsetWidth-maskSize;
+      }
+      if(top<=0){
+        top=0;
+      }
+      if(top>=e.target.offsetHeight-maskSize){//e.target.offsetHeight获得当前元素的高度，只读
+        top=e.target.offsetHeight-maskSize;
+      }
+      this.maskLeft=left+e.target.offsetLeft+"px";//因为有外边距要加上
+      this.maskTop=top+e.target.offsetTop+"px";
+      this.bigImagePosition=`${-800/350*left}px ${-800/350*top}px`
     },
     checkItem(){
       var options=this.specs;//数组是引用类型，所以对options操作等于是对this.specs操作
@@ -301,6 +337,8 @@ export default {
     },
     changeStyle(e){
       this.index=e.target.dataset.id;
+      this.mPic=e.target.dataset.md;
+      this.bigImageUrl=e.target.dataset.lg;
     },
     toggleImg(){//添加/删除样式类名
       this.isAtten=!this.isAtten;
@@ -332,6 +370,7 @@ export default {
           }
           this.axios.post(url,params).then(res=>{
             alert(res.data.msg);
+            this.bus.$emit('addCart');
           })
         })
       }else{
@@ -355,15 +394,13 @@ export default {
   },
   created(){
       this.id=this.$route.params.id;
-    this.getGoodsInfo();//获得商品详情信息
-    this.$nextTick(function(){//必须窗口加载后执行，否则获得的offsetTop是相对于当前组件最外层元素
-      var num=this.pics.length;
-      this.myCarousel({el:".sImg",num:num,showNum:5,width:62,isAuto:false,isCircle:false});
-      var divTop=document.querySelector("[data-toggle=fixed]").offsetTop;//获得元素距离浏览器顶部的距离
-      window.onscroll=()=>{//滚动条滚动时
-        var scrollTop=document.documentElement.scrollTop || document.body.scrollTop;//获得页面滚动过的距离(兼容ie)
-        this.isFixed=scrollTop>divTop;
-      }
+      this.getGoodsInfo();//获得商品详情信息
+      this.$nextTick(()=>{//必须窗口加载后执行，否则获得的offsetTop是相对于当前组件最外层元素
+        var divTop=document.querySelector("[data-toggle=fixed]").offsetTop;//获得元素距离浏览器顶部的距离
+        window.onscroll=()=>{//滚动条滚动时
+          var scrollTop=document.documentElement.scrollTop || document.body.scrollTop;//获得页面滚动过的距离(兼容ie)
+          this.isFixed=scrollTop>divTop;
+        }
     })
   },
   watch:{
@@ -374,7 +411,7 @@ export default {
         this.count=val.replace(/\D/g,'')//非数字转为空字符
       }
     }
-  }
+  },
 }
 </script>
 <style scoped>
@@ -405,6 +442,7 @@ export default {
 #section>.goods_intro{
   margin-top:5px;
   padding:20px 0px;
+  position:relative;
 }
 #section>.goods_intro>.left{
   width:350px;
@@ -412,10 +450,17 @@ export default {
 }
 #section>.goods_intro>.left>ul{
   position:relative;
-  width:350px;
   height:350px;
   margin:0 auto;
   margin-bottom:30px;
+}
+#section>.goods_intro>.left .super-mask{
+  width:350px;
+  height:350px;
+  position:absolute;
+  top:20px;
+  left:20px;
+  z-index: 100;
 }
 #section>.goods_intro>.left>ul>li{
   position:absolute;
@@ -425,9 +470,6 @@ export default {
 #section>.goods_intro>.left>.mImg img{
   width:350px;
   height:350px;
-}
-#section>.goods_intro>.left>.mImg li.active{
-  z-index:10;
 }
 #section>.goods_intro>.left .sImg .fixed_box{
   width:300px;
@@ -450,6 +492,23 @@ export default {
 }
 #section>.goods_intro>.left .sImg img.active{
   border:1px solid #DF1738;
+}
+#section>.goods_intro>.left .bigDiv{
+  position:absolute;
+  width:350px;
+  height:350px;
+  left:380px;
+  top:20px;
+  z-index: 100;
+  background-repeat:no-repeat;
+}
+#section>.goods_intro>.left .mask{
+  position:absolute;
+  width:150px;
+  height:150px;
+  z-index: 100;
+  background:#ff0;
+  opacity:0.3;
 }
 #section>.goods_intro>.left .btn{
   display:block;

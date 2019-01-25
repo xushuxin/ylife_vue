@@ -181,6 +181,7 @@ export default {
           }
           this.axios.post(url,params).then(res=>{
             alert(res.data.msg);
+            this.bus.$emit('addCart')
           })
         })
       }else{

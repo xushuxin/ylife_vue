@@ -188,27 +188,32 @@ export default {
       var url="http://127.0.0.1:80/shopcart/delete"
       var params=`id=${id}`
       this.axios.post(url,params).then(res=>{
-        // this.getCartItem();
+        this.getCartItem();
       })
     }
   },
   created(){
     this.loginStatus();
+    this.getCartItem();
+    this.bus.$on('addCart',this.getCartItem)
   },
   watch:{
     "$route":{//监听地址参数的值，val既是值
       handler(val){
+        console.log(val)
         if(this.$route.query.kwords){//如果地址栏有关键词
           this.kwords=decodeURIComponent(val.query.kwords);//decodeURIComponent解码数字以及字母汉字，decodeURI只解码空格
+        }else{
+          this.kwords=""
         }
         this.isIndex=this.$route.path=="/"//如果是首页
       },
       immediate:true//声明时立即执行
     },
-    cartList:{//监听购物车列表
-      handler:'getCartItem',//使用函数字面量名称
-      immediate:true//声明时立即执行
-    },
+    // cartList:{//监听购物车列表
+    //   handler:'getCartItem',//使用函数字面量名称
+    //   immediate:true//声明时立即执行
+    // },
   },
   computed:{
     getTotal(){//计算购物车内所有商品价格的和

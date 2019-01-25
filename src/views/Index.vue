@@ -3,28 +3,28 @@
       <!-- 轮播图 -->
       <div class="carousel">
         <!--轮播图主体-->
-        <div class="car_img">
-          <router-link :to="{name:'detail',params:{id:item.href.split('=')[1]}}" v-for="(item,i) of carousel_list" :key="i" :class="i==index_id?'active':''">
-            <img :src="item.src" alt="" >
+        <div class="car_img" @mouseenter="clearTimer1" @mouseleave="startTimer1">
+          <router-link :to="{name:'detail',params:{id:carousel_id}}">
+            <img :src="carousel_img" alt="" >
           </router-link>
         </div>
         <!-- 小圆点 -->
         <ul class="car_index">
-          <li v-for="(item,i) of carousel_list" :key="i" @mouseover="changeimg" :data-id="i" :class="i==index_id?'active':''"></li>
+          <li v-for="(item,i) of carousel_list" :key="i" @mouseover="changeimg" :data-img="item.src" :data-id="item.href.split('=')[1]" :data-i="i" :class="i==index_id?'active':''"></li>
         </ul>
       </div>
       <!-- 今日推荐 -->
       <div class="today_rec container">
         <div class="title">今日推荐</div>
         <div class="scroll_box">
-          <ul class="today_img" :style="`transition:${transition};margin-left:${marginLeft}px;`">
+          <ul class="today_img" @mouseenter="clearTimer2" @mouseleave="startTimer2">
             <li v-for="(item,i) of today_list" :key="i">
               <router-link :to="{name:'detail',params:{id:item.href.split('=')[1]}}"><img :src="item.img_url" alt=""></router-link>
             </li>
           </ul> 
         </div>
-          <div class="arrow-left" @click="prev"><span></span></div>
-          <div class="arrow-right" @click="next"><span></span></div>
+        <div class="arrow-left" @click="prev"><span></span></div>
+        <div class="arrow-right" @click="next"><span></span></div>
       </div>
       <!-- 热门推荐 -->
       <div class="hot_rec container">
@@ -234,11 +234,11 @@ export default {
   data(){
     return {
       carousel_list:[],//1轮播图列表
+      carousel_id:0,
+      carousel_img:"",
       index_id:0,//轮播图小圆点的下标
       timer1:null,//轮播图定时器
       today_list:[],//2今日推荐列表
-      transition:"none",//今日推荐过渡
-      marginLeft:0,//今日推荐ul左外边距
       index:0,//今日推荐指示器
       clickTime:0,//点击时间，控制点击频率
       timer2:null,//今日推荐定时器
@@ -283,17 +283,23 @@ export default {
       {id:8,img_url:"http://127.0.0.1:80/images/index_4L8.jpg",title:"大润窑 汝窑10头茶具",price:85.00,productId:4},
       {id:9,img_url:"http://127.0.0.1:80/images/index_4L9.jpg",title:"申福青花瓷单人餐具套装",price:218.00,productId:4}
       ]},
+      timer3:null,
+      timer4:null
     }
   },
   methods:{
     //1轮播图
     getcarousel(){
       this.axios.get("http://127.0.0.1:80/index/carousel").then(res=>{//使用axios模块发送ajax异步请求
-        this.carousel_list=res.data.data;//res.data->{code:1,list:[{id:1,src:...},...]}
+        var list=this.carousel_list=res.data.data;//res.data->{code:1,list:[{id:1,src:...},...]}
+        this.carousel_id=list[0].href.split('=')[1];
+        this.carousel_img=list[0].src
       })
     },
     changeimg(e){
-      this.index_id=e.target.dataset.id;//把前台点击事件获得的id赋值给vm实例对象的index_id
+      this.index_id=e.target.dataset.i;//把前台点击事件获得的id赋值给vm实例对象的index_id
+      this.carousel_id=e.target.dataset.id;
+      this.carousel_img=e.target.dataset.img;
       this.carouselauto();//自动轮播
     },
     carouselauto(){//轮播图定时器
@@ -303,38 +309,33 @@ export default {
         this.index_id=this.index_id%5;
       },3000);
     },
-    //2主体
-    getMainImages(){
-      // this.axios.get()
-    },
     //3今日推荐
     gettodayrec(){//获得列表
       this.axios.get("http://127.0.0.1:80/index/todayrec").then(res=>{
         this.today_list=res.data.data;
         this.today_list=this.today_list.concat(this.today_list.slice(0,4));//要实现无缝滚动，至少要多四张图
-        console.log(this.today_list);
       })
     },
-    prev(){
+    prev(e){
       if(new Date() - this.clickTime>500){
         this.clickTime=new Date();
-        var ul=document.querySelector("#section>.today_rec>.scroll_box>.today_img");
+        var ul=document.querySelector("#section>.today_rec .today_img");
         if(this.index==0){
-          ul.style.transition="none";
-          ul.style.marginLeft=-280*8+"px";
-          this.index=8;
+           ul.style.transition="none";
+           ul.style.marginLeft=-280*8+"px";
+           this.index=8; 
         }
         this.index--;
         var marginLeft=parseInt(getComputedStyle(ul).marginLeft);
         ul.style.transition="margin-left 0.5s ease-out";
-        this.marginLeft=marginLeft+280;
+        ul.style.marginLeft=marginLeft+280+"px";
       }
     },
-    next(){
+    next(e){
       // console.log(new Date() -this.clickTime);
       if( new Date() - this.clickTime >500){//第一次点击时this.clickTime是0,一定执行
         this.clickTime=new Date();//点击后this.clickTime转为当前时间，下次点击时，两次时间差需要大于500ms
-        var ul=document.querySelector("#section>.today_rec>.scroll_box>.today_img");
+        var ul=document.querySelector("#section>.today_rec .today_img");
         if(this.index==8){
           ul.style.transition="none";
           ul.style.marginLeft=0;
@@ -343,8 +344,8 @@ export default {
         this.index++;
         var marginLeft=parseInt(getComputedStyle(ul).marginLeft);
         ul.style.transition="margin-left 0.5s ease-out";
-        this.marginLeft=marginLeft-280;
-      }
+        ul.style.marginLeft=marginLeft-280+"px";
+      } 
     },
     //4热门推荐
     gethotrec(){//获取列表
@@ -356,7 +357,19 @@ export default {
       var arr1=this.hot_list.slice(0,6);
       var arr2=this.hot_list.slice(6);
       this.hot_list=arr2.concat(arr1); 
-    }
+    },
+    clearTimer1(){
+      clearInterval(this.timer1)
+    },
+    startTimer1(){
+     this.carouselauto();
+    },
+    clearTimer2(){
+      clearInterval(this.timer2)
+    },
+    startTimer2(){
+      this.timer2=setInterval(this.next,3000)
+    },
   },
   created(){
     this.gettodayrec();
@@ -364,35 +377,21 @@ export default {
     this.getcarousel();
   },
   mounted(){
-    //1获得轮播图主体，鼠标进入清除，离开时重新添加
-    var car_img=document.getElementsByClassName("car_img")[0];
-    car_img.onmouseenter=(e)=>{
-      clearInterval(this.timer1);
-    }
-    car_img.onmouseleave=(e)=>{
-      this.carouselauto();
-    }
-    this.carouselauto();
-    //2今日推荐
-    var today_img=document.getElementsByClassName("today_img")[0];
-    today_img.onmouseenter=(e)=>{//鼠标移入移出
-      clearInterval(this.timer2);
-    }
-    today_img.onmouseleave=(e)=>{
-      this.timer2=setInterval(this.next,3000);
-    }
     //加载后就调用轮播
-    this.timer2=setInterval(this.next,3000);
+    this.startTimer1();
+    this.startTimer2();
     //3主体
     //2F轮播
-    this.myCarousel({el:"#section>.floor>.floor2>.box>.right>ul>li:first-child",num:2,width:440});//元素，图片张数，图片宽度，轮播间隔时间，时间曲线
+    this.timer3=this.myCarousel({el:"#section>.floor>.floor2>.box>.right>ul>li:first-child",num:2,width:440});//元素，图片张数，图片宽度，轮播间隔时间，时间曲线
     //3F轮播
-    this.myCarousel({el:"#section .floor3 .right .my_carousel",num:2,width:396});
+    this.timer4=this.myCarousel({el:"#section .floor3 .right .my_carousel",num:2,width:396});
     
   },
   destroyed(){//组件销毁时，清除定时器
     clearInterval(this.timer1)
     clearInterval(this.timer2)
+    clearInterval(this.timer3)
+    clearInterval(this.timer4)
   }
 }
 </script>
@@ -475,11 +474,9 @@ export default {
   height:410px;
   position:absolute;
   cursor:pointer;
+
 }
 
-#section>.carousel>.car_img .active{
- z-index:1;
-}
 #section>.carousel>.car_index{
   position:absolute;
   top:618px;
